@@ -1,6 +1,15 @@
 'use client';
 
 import { useState } from 'react';
+import TickerInputRow from './components/TickerInputRow';
+import WeightSummary from './components/WeightSummary';
+import DateRangePicker from './components/DateRangePicker';
+import ResultCard from './components/ResultCard';
+
+const popularTickers = [
+  'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA', 'NVDA', 'META',
+  'BRK.B', 'JPM', 'V', 'JNJ', 'UNH', 'XOM', 'PG', 'MA'
+];
 
 type TickerInput = {
   ticker: string;
@@ -22,6 +31,9 @@ export default function Home() {
   const [result, setResult] = useState<RiskResult | null>(null);
   const [loading, setLoading] = useState(false);
 
+  const totalWeight = portfolio.reduce((acc, item) => acc + item.weight, 0);
+  const isWeightValid = Math.abs(totalWeight - 1.0) < 0.0001;
+
   const handleChange = (index: number, field: keyof TickerInput, value: string) => {
     const updated = [...portfolio];
     if (field === 'weight') {
@@ -34,7 +46,21 @@ export default function Home() {
 
   const addRow = () => setPortfolio([...portfolio, { ticker: '', weight: 0 }]);
 
+  const removeRow = (index: number) => {
+    const updated = [...portfolio];
+    updated.splice(index, 1);
+    setPortfolio(updated);
+  };
+
   const handleSubmit = async () => {
+    if (!isWeightValid) return;
+
+    const hasInvalid = portfolio.some(p => !p.ticker || isNaN(p.weight));
+    if (hasInvalid) {
+      alert('Please make sure all tickers and weights are filled in.');
+      return;
+    }
+
     setLoading(true);
     try {
       const response = await fetch('http://localhost:8000/api/risk', {
@@ -70,24 +96,15 @@ export default function Home() {
 
         <div className="space-y-4">
           {portfolio.map((row, idx) => (
-            <div key={idx} className="flex gap-4">
-              <input
-                value={row.ticker}
-                placeholder="Ticker"
-                // className="flex-1 rounded-lg p-2 text-black"
-                className="flex-1 rounded-lg p-2 bg-[#1A1A40] text-white border border-[#45AFFF]"
-                onChange={(e) => handleChange(idx, 'ticker', e.target.value.toUpperCase())}
-              />
-              <input
-                type="number"
-                step="0.01"
-                value={row.weight}
-                placeholder="Weight"
-                // className="w-24 rounded-lg p-2 text-black"
-                className="flex-1 rounded-lg p-2 bg-[#1A1A40] text-white border border-[#45AFFF]"
-                onChange={(e) => handleChange(idx, 'weight', e.target.value)}
-              />
-            </div>
+            <TickerInputRow
+              key={idx}
+              index={idx}
+              ticker={row.ticker}
+              weight={row.weight}
+              onChange={handleChange}
+              onRemove={removeRow}
+              popularTickers={popularTickers}
+            />
           ))}
           <button
             onClick={addRow}
@@ -95,49 +112,26 @@ export default function Home() {
           >
             + Add Ticker
           </button>
+          <WeightSummary totalWeight={totalWeight} isValid={isWeightValid} />
         </div>
 
-        <div className="flex gap-4">
-          <div className="flex flex-col flex-1">
-            <label className="mb-1 text-sm text-[#E041D1]">Start Date</label>
-            <input
-              type="date"
-              // className="rounded-lg p-2 text-black"
-              className="rounded-lg p-2 bg-[#1A1A40] text-white border border-[#45AFFF]"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-            />
-          </div>
-          <div className="flex flex-col flex-1">
-            <label className="mb-1 text-sm text-[#E041D1]">End Date</label>
-            <input
-              type="date"
-              // className="rounded-lg p-2 text-black"
-               className="rounded-lg p-2 bg-[#1A1A40] text-white border border-[#45AFFF]"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-            />
-          </div>
-        </div>
+        <DateRangePicker
+          startDate={startDate}
+          endDate={endDate}
+          setStartDate={setStartDate}
+          setEndDate={setEndDate}
+        />
 
         <button
           onClick={handleSubmit}
-          className="w-full bg-[#9D4EDD] text-white py-2 rounded-xl font-semibold text-lg hover:bg-[#7c3ed6]"
+          disabled={!isWeightValid || loading}
+          className={`w-full py-2 rounded-xl font-semibold text-lg transition
+            ${isWeightValid ? 'bg-[#9D4EDD] hover:bg-[#7c3ed6] text-white' : 'bg-gray-500 cursor-not-allowed text-gray-300'}`}
         >
           {loading ? 'Crunching the numbers...' : 'Calculate Risk'}
         </button>
 
-        {result && (
-          <div className="bg-[#F4F4F4] text-[#1A1A40] p-6 rounded-xl mt-6 shadow-md">
-            <h2 className="text-2xl font-bold mb-4 text-[#9D4EDD]">Results</h2>
-            <p>
-              <strong>VaR (95%):</strong> {result.var_95.toFixed(4)}
-            </p>
-            <p>
-              <strong>Standard Deviation:</strong> {result.stddev.toFixed(4)}
-            </p>
-          </div>
-        )}
+        {result && <ResultCard result={result} />}
       </div>
     </main>
   );
