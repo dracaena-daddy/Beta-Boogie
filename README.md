@@ -6,9 +6,10 @@
 
 ---
 
-## 🚀 Live Demo
+## Project Roadmap
 
-*Will add once deployed*
+View the full roadmap in docs/roadmap.md
+Check out upcoming models in docs/volatility_models.md
 
 ---
 
@@ -20,6 +21,12 @@
 - 📈 Interactive charts with VaR thresholds (coming soon!)
 - 📥 PDF + CSV report generation (coming soon!)
 - 🤖 Future integration with deep learning and transformers (coming...later!)
+
+---
+
+## 🚀 Live Demo
+
+*Will add once deployed*
 
 ---
 
