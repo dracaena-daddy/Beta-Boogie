@@ -7,9 +7,38 @@ import DateRangePicker from './components/DateRangePicker';
 import ResultCard from './components/ResultCard';
 
 const popularTickers = [
-  'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA', 'NVDA', 'META',
-  'BRK.B', 'JPM', 'V', 'JNJ', 'UNH', 'XOM', 'PG', 'MA'
-];
+  'AAPL', 'MSFT', 'AMZN', 'NVDA', 'GOOGL', 'TSLA', 'META', 'BRK.B', 'UNH', 'JNJ',
+  'XOM', 'JPM', 'V', 'PG', 'HD', 'MA', 'CVX', 'PFE', 'ABBV', 'LLY',
+  'PEP', 'KO', 'MRK', 'BAC', 'COST', 'DIS', 'ADBE', 'AVGO', 'CSCO', 'NFLX',
+  'CMCSA', 'ABT', 'NKE', 'TMO', 'INTC', 'WMT', 'AMD', 'HON', 'UNP', 'AMGN',
+  'LOW', 'QCOM', 'ORCL', 'TXN', 'IBM', 'CAT', 'GE', 'MDT', 'ISRG', 'NOW',
+  'SPGI', 'GS', 'BLK', 'LMT', 'BA', 'SCHW', 'AXP', 'DE', 'CVS', 'C',
+  'MS', 'PLD', 'TJX', 'T', 'PYPL', 'VRTX', 'SYK', 'MO', 'CI', 'DUK',
+  'SO', 'MMC', 'TGT', 'PNC', 'BDX', 'ADI', 'CB', 'ZTS', 'ICE', 'MU',
+  'APD', 'ITW', 'REGN', 'EOG', 'NSC', 'SHW', 'DHR', 'WM', 'FDX', 'MCD',
+  'CL', 'AON', 'EL', 'ROP', 'ETN', 'D', 'EMR', 'PH', 'AEP', 'KMB',
+  'PSX', 'MAR', 'ADP', 'CTAS', 'HUM', 'TRV', 'FIS', 'NOC', 'CME', 'MCK',
+  'SRE', 'ECL', 'FTNT', 'WELL', 'PGR', 'OXY', 'WBA', 'HCA', 'LRCX', 'DOW',
+  'CMG', 'STZ', 'SPG', 'TEL', 'HLT', 'MPC', 'AIG', 'DLR', 'IQV', 'AFL',
+  'MET', 'KMI', 'GILD', 'MNST', 'VLO', 'BKNG', 'IDXX', 'ROST', 'F', 'ANET',
+  'PRU', 'ALL', 'AMP', 'LEN', 'SYY', 'CNC', 'LHX', 'DHI', 'PPG', 'ED',
+  'KR', 'DFS', 'WMB', 'MTD', 'RSG', 'PAYX', 'WEC', 'OTIS', 'HES', 'TROW',
+  'AJG', 'OKE', 'PCAR', 'STT', 'VICI', 'MLM', 'ZBH', 'CHTR', 'WST', 'NEM',
+  'ILMN', 'EQR', 'PEG', 'AWK', 'FAST', 'AME', 'GWW', 'FITB', 'KEYS', 'GLW',
+  'FRC', 'HBAN', 'CDW', 'VRSK', 'EXC', 'DTE', 'XYL', 'TSCO', 'CTSH', 'RF',
+  'MTB', 'CINF', 'WAT', 'AEE', 'BALL', 'ES', 'EVRG', 'CMS', 'TYL', 'FE',
+  'ETR', 'HIG', 'PPL', 'EPAM', 'BAX', 'TTWO', 'NUE', 'HOLX', 'HPE', 'FMC',
+  'DLTR', 'AVB', 'DOV', 'LUV', 'BBY', 'FLT', 'ALB', 'RJF', 'ARE', 'MAA',
+  'MKC', 'VMC', 'PKI', 'IT', 'WRB', 'PFG', 'CF', 'CAG', 'GEN', 'IP',
+  'CNP', 'WDC', 'MOS', 'SWK', 'K', 'CLX', 'NVR', 'BBWI', 'BIO', 'STE',
+  'FDS', 'ZBRA', 'NDAQ', 'JBHT', 'EXR', 'HWM', 'MPWR', 'TECH', 'TXT', 'TER',
+  'COO', 'CTVA', 'LKQ', 'GRMN', 'IEX', 'TRMB', 'CHD', 'STX', 'AAL', 'UAL',
+  'RCL', 'NCLH', 'CCL', 'WYNN', 'MGM', 'LVS', 'MAR', 'HLT', 'H', 'WH',
+  'WYN', 'CHH', 'DRH', 'HST', 'PK', 'XOM', 'CVX', 'COP', 'OXY', 'MRO',
+  'HES', 'APA', 'DVN', 'FANG', 'EOG', 'PXD', 'XEL', 'AEE', 'CMS', 'DTE',
+  'ED', 'ES', 'ETR', 'EVRG', 'FE', 'NEE', 'NI', 'NRG', 'PNW', 'PPL',
+  'SO', 'SRE', 'WEC', 'XEL', 'AES', 'CNP', 'D', 'DUK', 'EIX', 'LNT',
+  'PEG', 'WEC', 'XEL', 'ATO', 'AWK', 'AWR'];
 
 type TickerInput = {
   ticker: string;

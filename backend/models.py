@@ -18,3 +18,4 @@ class RiskResponse(BaseModel):
     """Return 95% VaR and standard deviation"""
     var_95: float
     stddev: float
+    returns: List[float]

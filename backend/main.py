@@ -24,4 +24,9 @@ def calculate_risk(request: RiskRequest):
         request.end_date
     )
     var_95, stddev = compute_var_stddev(portfolio_returns)
-    return RiskResponse(var_95=var_95, stddev=stddev)
+    return RiskResponse(
+    var_95=var_95,
+    stddev=stddev,
+    returns=portfolio_returns.tolist()
+)
+
