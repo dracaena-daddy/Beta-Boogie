@@ -7,12 +7,12 @@ This project was created as part of a graduate-level Computer Science Master's p
 
 ## Tech Stack
 * Frontend: Next.js (App Router), Tailwind CSS
-Backend: FastAPI, Python, yfinance, NumPy, Pandas
-Architecture: REST API between frontend and backend
+* Backend: FastAPI, Python, yfinance, NumPy, Pandas
+* Architecture: REST API between frontend and backend
 
 ## Features
-Enter custom portfolios with tickers + weights
-Set custom date ranges
-Get instant risk metrics (VaR & volatility)
-Beautiful, brand-driven UI with charts (coming soon)
-Future features: Monte Carlo simulation, deep learning predictions, LLM-generated insights
+* Enter custom portfolios with tickers + weights
+* Set custom date ranges
+* Get instant risk metrics (VaR & volatility)
+* Beautiful, brand-driven UI with charts (coming soon)
+* Future features: Monte Carlo simulation, deep learning predictions, LLM-generated insights
