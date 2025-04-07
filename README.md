@@ -9,6 +9,7 @@
 ## Project Roadmap
 
 View the full roadmap in docs/roadmap.md
+
 Check out upcoming models in docs/volatility_models.md
 
 ---
