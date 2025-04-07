@@ -1,4 +1,4 @@
-Beta Boogie Roadmap
+# Beta Boogie Roadmap
 
 Welcome to the official roadmap for Beta Boogie, a financial risk analytics web application. Below is an overview of planned milestones, feature drops, and upcoming enhancements. This file is actively updated during development.
 
