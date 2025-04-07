@@ -6,7 +6,7 @@ Beta Boogie is a web-based portfolio risk analysis tool that grooves with your d
 This project was created as part of a graduate-level Computer Science Master's program, blending basic financial modeling with an approachable user experience.
 
 ## Tech Stack
-Frontend: Next.js (App Router), Tailwind CSS
+* Frontend: Next.js (App Router), Tailwind CSS
 Backend: FastAPI, Python, yfinance, NumPy, Pandas
 Architecture: REST API between frontend and backend
 
