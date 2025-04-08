@@ -158,3 +158,41 @@ def delete_analysis(analysis_id: int, request: Request, db: Session = Depends(ge
 
     return {"success": True, "message": "Analysis deleted"}
 
+
+class UpdateName(BaseModel):
+    id: int
+    name: str
+
+@router.patch("/api/update-portfolio-name")
+def update_portfolio_name(data: UpdateName, request: Request, db: Session = Depends(get_db)):
+    user_id = verify_clerk_token(request)
+
+    portfolio = db.query(Portfolio).filter(Portfolio.id == data.id).first()
+
+    if not portfolio:
+        raise HTTPException(status_code=404, detail="Portfolio not found")
+
+    if portfolio.user_id != user_id:
+        raise HTTPException(status_code=403, detail="Unauthorized")
+
+    portfolio.name = data.name
+    db.commit()
+
+    return {"success": True, "message": "Portfolio name updated"}
+
+@router.patch("/api/update-analysis-name")
+def update_analysis_name(data: UpdateName, request: Request, db: Session = Depends(get_db)):
+    user_id = verify_clerk_token(request)
+
+    analysis = db.query(Analysis).filter(Analysis.id == data.id).first()
+
+    if not analysis:
+        raise HTTPException(status_code=404, detail="Analysis not found")
+
+    if analysis.user_id != user_id:
+        raise HTTPException(status_code=403, detail="Unauthorized")
+
+    analysis.name = data.name
+    db.commit()
+
+    return {"success": True, "message": "Analysis name updated"}

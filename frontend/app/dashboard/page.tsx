@@ -1,4 +1,3 @@
-// dashboard page
 'use client';
 
 import { useUser, useAuth } from '@clerk/nextjs'; 
@@ -85,6 +84,42 @@ export default function DashboardPage() {
     }
   };
 
+  const handleUpdatePortfolioName = async (id: number, name: string) => {
+    try {
+      const token = await getToken();
+      const res = await fetch(`http://localhost:8000/api/update-portfolio-name`, {
+        method: 'PATCH',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ id, name }),
+      });
+      if (!res.ok) throw new Error("Failed to update portfolio name");
+      alert("Portfolio name updated!");
+    } catch (err) {
+      console.error("❌ Failed to update portfolio name:", err);
+    }
+  };
+
+  const handleUpdateAnalysisName = async (id: number, name: string) => {
+    try {
+      const token = await getToken();
+      const res = await fetch(`http://localhost:8000/api/update-analysis-name`, {
+        method: 'PATCH',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ id, name }),
+      });
+      if (!res.ok) throw new Error("Failed to update analysis name");
+      alert("Analysis name updated!");
+    } catch (err) {
+      console.error("❌ Failed to update analysis name:", err);
+    }
+  };
+
   if (!isLoaded) return <p className="text-white p-6">Loading...</p>;
   if (!isSignedIn) return null;
 
@@ -106,9 +141,25 @@ export default function DashboardPage() {
                 key={i}
                 className="bg-[#1A1A40] text-white p-4 rounded shadow border border-[#9D4EDD]"
               >
-                <h3 className="font-semibold text-lg mb-2">
-                  {p.name || `Portfolio ${i + 1}`}
-                </h3>
+                <input
+                  type="text"
+                  value={p.name}
+                  onChange={(e) => {
+                    const name = e.target.value;
+                    setPortfolios((prev) =>
+                      prev.map((item) =>
+                        item.id === p.id ? { ...item, name } : item
+                      )
+                    );
+                  }}
+                  className="w-full mb-2 px-2 py-1 text-white bg-[#1A1A40] border border-[#9D4EDD] rounded"
+                />
+                <button
+                  onClick={() => handleUpdatePortfolioName(p.id, p.name)}
+                  className="mb-2 px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm"
+                >
+                  Save Name
+                </button>
                 <p><strong>Tickers:</strong> {p.tickers.join(", ")}</p>
                 <p><strong>Weights:</strong> {p.weights.join(", ")}</p>
                 <p><strong>Start:</strong> {p.startDate}</p>
@@ -139,9 +190,25 @@ export default function DashboardPage() {
                 key={i}
                 className="bg-[#1A1A40] text-white p-4 rounded shadow border border-[#E041D1]"
               >
-                <h3 className="font-semibold text-lg mb-2">
-                  {a.name || `Analysis ${i + 1}`}
-                </h3>
+                <input
+                  type="text"
+                  value={a.name}
+                  onChange={(e) => {
+                    const name = e.target.value;
+                    setAnalyses((prev) =>
+                      prev.map((item) =>
+                        item.id === a.id ? { ...item, name } : item
+                      )
+                    );
+                  }}
+                  className="w-full mb-2 px-2 py-1 text-white bg-[#1A1A40] border border-[#E041D1] rounded"
+                />
+                <button
+                  onClick={() => handleUpdateAnalysisName(a.id, a.name)}
+                  className="mb-2 px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm"
+                >
+                  Save Name
+                </button>
                 <p><strong>Tickers:</strong> {a.tickers.join(", ")}</p>
                 <p><strong>Weights:</strong> {a.weights.join(", ")}</p>
                 <p><strong>Start:</strong> {a.start_date}</p>
