@@ -18,12 +18,12 @@ Planned Feature Milestones
 
 ###  Core Web App Structure
 - [X] SPA routing with Next.js App Router
-- [ ] Core form for VaR analysis
+- [X] Core form for VaR analysis
 - [X] Component-based layout + UI polish
 
 ###  User Account Features
-- [ ] Login/Signup flow
-- [ ] Persist user portfolios to DB
+- [X] Login/Signup flow
+- [] Persist user portfolios to DB
 - [ ] Per-user saved analysis history
 
 ###  Risk Analysis Engine

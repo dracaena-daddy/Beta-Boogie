@@ -1,9 +1,29 @@
 // account page
-export default function AccountPage() {
-    return (
-        <main className="p-6">
-            <h1 className="text-3x1 font-bold text-[#9D4EDD]">Account</h1>
-            <p>Account Settings</p>
-        </main>
-    );
+'use client';
+
+import { useAuth } from '@clerk/nextjs';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
+
+export default function DashboardPage() {
+  const { isLoaded, isSignedIn } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (isLoaded && !isSignedIn) {
+      router.push('/login');
+    }
+  }, [isLoaded, isSignedIn]);
+
+  if (!isLoaded || !isSignedIn) {
+    return <div className="p-6">Loading...</div>; // Optional loader while auth is being checked
+  }
+
+  return (
+    <div className="p-6">
+      <h1 className="text-2xl font-bold text-[#45AFFF]">Welcome to your account pages!</h1>
+      <p>You are logged on and can adjust your user settings.</p>
+    </div>
+  );
 }
+

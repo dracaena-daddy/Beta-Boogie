@@ -10,6 +10,7 @@ const links = [
   { href: '/', label: 'Home' },
   { href: '/analyze', label: 'Analyze' },
   { href: '/dashboard', label: 'Dashboard' },
+  { href: '/account', label: 'Account'},
   { href: '/docs', label: 'Docs' },
 ];
 
@@ -24,6 +25,7 @@ export default function NavBar() {
            src="/favicon.ico"
            width={40}
            height={40}
+           alt="Beta Boogie"
          />
         </div>
 
