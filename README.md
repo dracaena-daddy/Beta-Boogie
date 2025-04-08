@@ -66,4 +66,4 @@ uvicorn main:app --reload
 
 ---
 
-*This project is part of a graduate project in Computer Science*
+*This project is part of a graduate project in Computer Science at Towson University*
