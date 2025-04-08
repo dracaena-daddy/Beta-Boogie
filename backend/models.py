@@ -1,6 +1,11 @@
 from pydantic import BaseModel
 from typing import List
 from datetime import date
+from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, JSON
+from sqlalchemy.dialects.postgresql import ARRAY
+from datetime import datetime
+from sqlalchemy.orm import declarative_base
+
 
 class TickerWeight(BaseModel):
     """Model for ticker symbol and corresponding weight"""
@@ -38,4 +43,23 @@ class Portfolio(Base):
     weights = Column(ARRAY(Float))
     start_date = Column(String)
     end_date = Column(String)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+class Analysis(Base):
+    __tablename__ = "analyses"
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(String, index=True)
+
+    # Portfolio details
+    name = Column(String)
+    tickers = Column(ARRAY(String))
+    weights = Column(ARRAY(Float))
+    start_date = Column(String)
+    end_date = Column(String)
+
+    # Analysis results
+    var = Column(Float)
+    stdev = Column(Float)
+
     created_at = Column(DateTime, default=datetime.utcnow)

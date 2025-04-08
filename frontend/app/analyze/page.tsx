@@ -1,13 +1,13 @@
-// analyze page
+// analysis page
 "use client";
 
 import { useState } from "react";
+import { useAuth } from "@clerk/nextjs";
 import TickerInputRow from "../components/TickerInputRow";
 import WeightSummary from "../components/WeightSummary";
 import DateRangePicker from "../components/DateRangePicker";
 import ResultCard from "../components/ResultCard";
 import SaveButton from "../components/SaveButton";
-import SaveAnalysisButton from "../components/SaveAnalysisButton";
 
 const popularTickers = [
   "AAPL",
@@ -339,6 +339,8 @@ type RiskResult = {
 };
 
 export default function AnalyzePage() {
+  const { getToken } = useAuth();
+
   const [portfolio, setPortfolio] = useState<TickerInput[]>([
     { ticker: "AAPL", weight: 0.5 },
     { ticker: "MSFT", weight: 0.5 },
@@ -409,10 +411,45 @@ export default function AnalyzePage() {
     }
   };
 
+  const handleSaveAnalysis = async () => {
+    if (!result) return;
+
+    try {
+      const token = await getToken();
+
+      const response = await fetch("http://localhost:8000/api/save-analysis", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          name: "My Portfolio",
+          tickers: portfolio.map((p) => p.ticker),
+          weights: portfolio.map((p) => p.weight),
+          startDate,
+          endDate,
+          var: result.var_95,
+          stdev: result.stddev,
+        }),
+      });
+
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.detail || "Failed to save analysis");
+      }
+
+      console.log("✅ Analysis saved");
+      alert("Analysis saved!");
+    } catch (err) {
+      console.error("❌ Failed to save analysis:", err);
+      alert("Failed to save analysis.");
+    }
+  };
+
   return (
     <main className="min-h-screen bg-[#1A1A40] text-[#F4F4F4] p-6">
       <div className="max-w-2xl mx-auto space-y-8">
-        {/* <h1 className="text-4xl font-bold text-[#9D4EDD] text-center">Beta Boogie</h1> */}
         <p className="text-center text-[#45AFFF]">
           Grooving with your portfolio’s risk
         </p>
@@ -470,23 +507,15 @@ export default function AnalyzePage() {
           {loading ? "Crunching the numbers..." : "Calculate Risk"}
         </button>
 
-        {/* {result && <ResultCard result={result} />} */}
-
         {result && (
           <>
             <ResultCard result={result} />
-            <SaveAnalysisButton
-              portfolio={{
-                tickers: portfolio.map((p) => p.ticker),
-                weights: portfolio.map((p) => p.weight),
-                startDate,
-                endDate,
-              }}
-              result={{
-                ...result,
-                createdAt: new Date().toISOString(),
-              }}
-            />
+            <button
+              onClick={handleSaveAnalysis}
+              className="w-full mt-2 py-2 bg-green-600 text-white rounded-xl hover:bg-green-700 font-semibold text-lg"
+            >
+              Save Analysis
+            </button>
           </>
         )}
       </div>
