@@ -5,6 +5,8 @@ from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, JSO
 from sqlalchemy.dialects.postgresql import ARRAY
 from datetime import datetime
 from sqlalchemy.orm import declarative_base
+from sqlalchemy import Float
+
 
 
 class TickerWeight(BaseModel):
@@ -57,6 +59,7 @@ class Analysis(Base):
     weights = Column(ARRAY(Float))
     start_date = Column(String)
     end_date = Column(String)
+    returns = Column(ARRAY(Float))
 
     # Analysis results
     var = Column(Float)

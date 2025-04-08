@@ -1,6 +1,6 @@
 # API routes live here
 # routes.py
-from fastapi import APIRouter, HTTPException, Depends, Request
+from fastapi import APIRouter, HTTPException, Depends, Request, Response
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from typing import List
@@ -8,6 +8,16 @@ from db import get_db
 from models import Portfolio, Analysis
 from datetime import datetime
 from auth import verify_clerk_token
+from matplotlib import pyplot as plt
+from io import BytesIO
+from fpdf import FPDF
+import matplotlib
+matplotlib.use("Agg")  #  Headless, non-GUI backend
+from matplotlib import pyplot as plt
+import base64
+from fastapi.responses import HTMLResponse
+
+
 
 router = APIRouter()
 
@@ -97,6 +107,7 @@ class AnalysisIn(BaseModel):
     endDate: str
     var: float
     stdev: float
+    returns: List[float]
 
 @router.post("/api/save-analysis")
 def save_analysis(data: AnalysisIn, request: Request, db: Session = Depends(get_db)):
@@ -111,6 +122,7 @@ def save_analysis(data: AnalysisIn, request: Request, db: Session = Depends(get_
         end_date=data.endDate,
         var=data.var,
         stdev=data.stdev,
+        returns=data.returns,  # new part
         created_at=datetime.utcnow(),
     )
 
@@ -119,6 +131,7 @@ def save_analysis(data: AnalysisIn, request: Request, db: Session = Depends(get_
     db.refresh(new_analysis)
 
     return {"success": True, "analysisId": new_analysis.id}
+
 
 @router.get("/api/load-analyses")
 def load_analyses(request: Request, db: Session = Depends(get_db)):
@@ -196,3 +209,153 @@ def update_analysis_name(data: UpdateName, request: Request, db: Session = Depen
     db.commit()
 
     return {"success": True, "message": "Analysis name updated"}
+
+
+
+# PDF ROUTES
+@router.get("/api/export-analysis-pdf/{analysis_id}")
+def export_analysis_pdf(analysis_id: int, request: Request, db: Session = Depends(get_db)):
+    user_id = verify_clerk_token(request)
+    analysis = db.query(Analysis).filter(Analysis.id == analysis_id).first()
+
+    if not analysis:
+        raise HTTPException(status_code=404, detail="Analysis not found")
+    if analysis.user_id != user_id:
+        raise HTTPException(status_code=403, detail="Unauthorized")
+
+    # === Plot 1: Portfolio Weights ===
+    fig1, ax1 = plt.subplots()
+    ax1.bar(analysis.tickers, analysis.weights)
+    ax1.set_title("Portfolio Weights")
+    ax1.set_ylabel("Weight")
+    ax1.set_xlabel("Ticker")
+    plt.tight_layout()
+
+    img1 = BytesIO()
+    plt.savefig(img1, format='png')
+    img1.seek(0)
+    plot1_path = f"/tmp/plot_weights_{analysis_id}.png"
+    with open(plot1_path, "wb") as f:
+        f.write(img1.read())
+    plt.close()
+
+    # === Plot 2: VaR Distribution ===
+    fig2, ax2 = plt.subplots()
+    ax2.hist(analysis.returns, bins=50, color='skyblue', edgecolor='black', alpha=0.7)
+    ax2.axvline(x=analysis.var, color='red', linestyle='--', linewidth=2, label=f"VaR = {analysis.var:.4f}")
+    ax2.set_title("VaR Distribution of Returns")
+    ax2.set_xlabel("Returns")
+    ax2.set_ylabel("Frequency")
+    ax2.legend()
+    plt.tight_layout()
+
+    img2 = BytesIO()
+    plt.savefig(img2, format='png')
+    img2.seek(0)
+    plot2_path = f"/tmp/plot_var_{analysis_id}.png"
+    with open(plot2_path, "wb") as f:
+        f.write(img2.read())
+    plt.close()
+
+    # === Create PDF ===
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", size=12)
+
+    pdf.cell(200, 10, txt=f"Analysis Report: {analysis.name}", ln=True)
+    pdf.cell(200, 10, txt=f"Date Range: {analysis.start_date} to {analysis.end_date}", ln=True)
+    pdf.cell(200, 10, txt=f"Tickers: {', '.join(analysis.tickers)}", ln=True)
+    pdf.cell(200, 10, txt=f"Weights: {', '.join(str(w) for w in analysis.weights)}", ln=True)
+    pdf.cell(200, 10, txt=f"VaR: {analysis.var}", ln=True)
+    pdf.cell(200, 10, txt=f"StDev: {analysis.stdev}", ln=True)
+
+    pdf.image(plot1_path, x=10, y=80, w=180)
+    pdf.add_page()
+    pdf.set_font("Arial", size=12)
+    pdf.cell(200, 10, txt="VaR Distribution", ln=True)
+    pdf.image(plot2_path, x=10, y=30, w=180)
+
+    pdf_string = pdf.output(dest='S').encode('latin1')
+
+    return Response(
+        content=pdf_string,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f"attachment; filename=analysis_{analysis_id}.pdf"
+        }
+    )
+
+@router.get("/api/export-analysis-html/{analysis_id}")
+def export_analysis_html(analysis_id: int, request: Request, db: Session = Depends(get_db)):
+    user_id = verify_clerk_token(request)
+    analysis = db.query(Analysis).filter(Analysis.id == analysis_id).first()
+
+    if not analysis:
+        raise HTTPException(status_code=404, detail="Analysis not found")
+    if analysis.user_id != user_id:
+        raise HTTPException(status_code=403, detail="Unauthorized")
+
+    # Plot 1: Portfolio Weights
+    fig1, ax1 = plt.subplots()
+    ax1.bar(analysis.tickers, analysis.weights)
+    ax1.set_title("Portfolio Weights")
+    ax1.set_ylabel("Weight")
+    ax1.set_xlabel("Ticker")
+    plt.tight_layout()
+    img1 = BytesIO()
+    plt.savefig(img1, format='png')
+    img1.seek(0)
+    img1_b64 = base64.b64encode(img1.read()).decode('utf-8')
+    plt.close()
+
+    # Plot 2: VaR Distribution
+    fig2, ax2 = plt.subplots()
+    ax2.hist(analysis.returns, bins=50, color='skyblue', edgecolor='black', alpha=0.7)
+    ax2.axvline(x=analysis.var, color='red', linestyle='--', linewidth=2, label=f"VaR = {analysis.var:.4f}")
+    ax2.set_title("VaR Distribution of Returns")
+    ax2.set_xlabel("Returns")
+    ax2.set_ylabel("Frequency")
+    ax2.legend()
+    plt.tight_layout()
+    img2 = BytesIO()
+    plt.savefig(img2, format='png')
+    img2.seek(0)
+    img2_b64 = base64.b64encode(img2.read()).decode('utf-8')
+    plt.close()
+
+    # Create HTML
+    html_content = f"""
+    <html>
+    <head>
+        <title>Analysis Report - {analysis.name}</title>
+        <style>
+            body {{ font-family: Arial, sans-serif; padding: 2rem; background-color: #f8f8f8; color: #333; }}
+            h1 {{ color: #9D4EDD; }}
+            .plot {{ margin: 30px 0; }}
+            .label {{ font-weight: bold; }}
+        </style>
+    </head>
+    <body>
+        <h1>Analysis Report: {analysis.name}</h1>
+        <p><span class="label">Date Range:</span> {analysis.start_date} to {analysis.end_date}</p>
+        <p><span class="label">Tickers:</span> {', '.join(analysis.tickers)}</p>
+        <p><span class="label">Weights:</span> {', '.join(str(w) for w in analysis.weights)}</p>
+        <p><span class="label">VaR:</span> {analysis.var}</p>
+        <p><span class="label">StDev:</span> {analysis.stdev}</p>
+
+        <div class="plot">
+            <h2>Portfolio Weights</h2>
+            <img src="data:image/png;base64,{img1_b64}" width="600"/>
+        </div>
+
+        <div class="plot">
+            <h2>VaR Distribution</h2>
+            <img src="data:image/png;base64,{img2_b64}" width="600"/>
+        </div>
+    </body>
+    </html>
+    """
+
+    return HTMLResponse(content=html_content, status_code=200, headers={
+        "Content-Disposition": f"attachment; filename=analysis_{analysis_id}.html"
+    })

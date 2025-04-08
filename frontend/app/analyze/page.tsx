@@ -1,3 +1,4 @@
+// analyze page
 "use client";
 
 import { useState } from "react";
@@ -9,9 +10,9 @@ import ResultCard from "../components/ResultCard";
 import SaveButton from "../components/SaveButton";
 import toast, { Toaster } from "react-hot-toast";
 
+// TODO: Add ALOT more of these tickers, they got deleted on accident.
 const popularTickers = [
   "AAPL", "MSFT", "AMZN", "NVDA", "GOOGL", "TSLA", "META", "BRK.B", "UNH", "JNJ",
-  // shortened for brevity...
 ];
 
 type TickerInput = {
@@ -119,6 +120,7 @@ export default function AnalyzePage() {
           endDate,
           var: result.var_95,
           stdev: result.stddev,
+          returns: result.returns || [],  // ✅ include the return distribution
         }),
       });
 

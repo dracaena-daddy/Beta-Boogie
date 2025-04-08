@@ -1,3 +1,4 @@
+// dashboard page
 'use client';
 
 import { useUser, useAuth } from '@clerk/nextjs'; 
@@ -125,6 +126,30 @@ export default function DashboardPage() {
     }
   };
 
+  const handleExport = async (id: number, format: 'pdf' | 'html') => {
+    try {
+      const token = await getToken();
+      const response = await fetch(`http://localhost:8000/api/export-analysis-${format}/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!response.ok) throw new Error(`Failed to export analysis as ${format}`);
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `analysis-${id}.${format}`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error(`Error exporting analysis as ${format}:`, err);
+      toast.error(`Failed to export as ${format}`);
+    }
+  };
+
   if (!isLoaded) return <p className="text-white p-6">Loading...</p>;
   if (!isSignedIn) return null;
 
@@ -222,12 +247,26 @@ export default function DashboardPage() {
                 <p><strong>VaR:</strong> {a.var}</p>
                 <p><strong>StDev:</strong> {a.stdev}</p>
                 <p><strong>Saved:</strong> {new Date(a.created_at).toLocaleString()}</p>
-                <button
-                  onClick={() => handleDeleteAnalysis(a.id)}
-                  className="mt-3 px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-sm"
-                >
-                  Delete
-                </button>
+                <div className="flex gap-2 mt-3">
+                  <button
+                    onClick={() => handleExport(a.id, 'pdf')}
+                    className="px-3 py-1 bg-purple-600 hover:bg-purple-700 text-white rounded text-sm"
+                  >
+                    Export as PDF
+                  </button>
+                  <button
+                    onClick={() => handleExport(a.id, 'html')}
+                    className="px-3 py-1 bg-cyan-600 hover:bg-cyan-700 text-white rounded text-sm"
+                  >
+                    Export as HTML
+                  </button>
+                  <button
+                    onClick={() => handleDeleteAnalysis(a.id)}
+                    className="ml-auto px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-sm"
+                  >
+                    Delete
+                  </button>
+                </div>
               </div>
             ))}
           </div>
