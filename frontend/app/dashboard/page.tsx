@@ -3,6 +3,7 @@
 import { useUser, useAuth } from '@clerk/nextjs'; 
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import toast, { Toaster } from 'react-hot-toast';
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -63,9 +64,10 @@ export default function DashboardPage() {
       });
       if (!res.ok) throw new Error("Failed to delete portfolio");
       setPortfolios((prev) => prev.filter((p) => p.id !== portfolioId));
+      toast.success("Portfolio deleted");
     } catch (err) {
       console.error("❌ Failed to delete portfolio:", err);
-      alert("Could not delete portfolio.");
+      toast.error("Could not delete portfolio");
     }
   };
 
@@ -78,9 +80,10 @@ export default function DashboardPage() {
       });
       if (!res.ok) throw new Error("Failed to delete analysis");
       setAnalyses((prev) => prev.filter((a) => a.id !== analysisId));
+      toast.success("Analysis deleted");
     } catch (err) {
       console.error("❌ Failed to delete analysis:", err);
-      alert("Could not delete analysis.");
+      toast.error("Could not delete analysis");
     }
   };
 
@@ -96,9 +99,10 @@ export default function DashboardPage() {
         body: JSON.stringify({ id, name }),
       });
       if (!res.ok) throw new Error("Failed to update portfolio name");
-      alert("Portfolio name updated!");
+      toast.success("Portfolio name updated!");
     } catch (err) {
       console.error("❌ Failed to update portfolio name:", err);
+      toast.error("Error updating portfolio name");
     }
   };
 
@@ -114,9 +118,10 @@ export default function DashboardPage() {
         body: JSON.stringify({ id, name }),
       });
       if (!res.ok) throw new Error("Failed to update analysis name");
-      alert("Analysis name updated!");
+      toast.success("Analysis name updated!");
     } catch (err) {
       console.error("❌ Failed to update analysis name:", err);
+      toast.error("Error updating analysis name");
     }
   };
 
@@ -125,6 +130,7 @@ export default function DashboardPage() {
 
   return (
     <main className="p-6 max-w-5xl mx-auto">
+      <Toaster position="top-right" />
       <h1 className="text-3xl font-bold text-[#9D4EDD] mb-6">My Account</h1>
 
       {/* 📂 Saved Portfolios */}
