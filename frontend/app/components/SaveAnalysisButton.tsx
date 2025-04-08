@@ -126,6 +126,7 @@ export default function SaveAnalysisButton({ portfolio, result }: Props) {
         },
       ];
 
+      // save user analysis to clerk metadata
       await user.update({
         publicMetadata: {
           savedAnalyses: updatedAnalyses,

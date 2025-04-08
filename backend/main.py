@@ -1,10 +1,21 @@
 from fastapi import FastAPI
-from models import RiskRequest, RiskResponse
+from db import engine
+from models import RiskRequest, RiskResponse, Base
 from risk_calculator import get_portfolio_returns, compute_var_stddev
 from fastapi.middleware.cors import CORSMiddleware
+from routes import router as portfolio_router
 
 # create an instance of FastAPI
 app = FastAPI()
+
+# execute some start up code
+@app.on_event("startup")
+def on_startup():
+    print("📦 Creating tables if they don't exist...")
+    Base.metadata.create_all(bind=engine)
+
+# register API route to save portfolio data
+app.include_router(portfolio_router)
 
 # needed to allow frontend and backend to communicate
 app.add_middleware(
