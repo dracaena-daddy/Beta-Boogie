@@ -17,9 +17,9 @@ Feature Drops (tentative)
 Planned Feature Milestones
 
 ###  Core Web App Structure
-- [ ] SPA routing with Next.js App Router
+- [X] SPA routing with Next.js App Router
 - [ ] Core form for VaR analysis
-- [ ] Component-based layout + UI polish
+- [X] Component-based layout + UI polish
 
 ###  User Account Features
 - [ ] Login/Signup flow
