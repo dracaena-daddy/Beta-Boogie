@@ -21,3 +21,4 @@ def compute_var_stddev(portfolio_returns):
     stddev = np.std(portfolio_returns)
     var_95 = np.percentile(portfolio_returns, 5)
     return var_95, stddev
+

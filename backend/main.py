@@ -4,6 +4,8 @@ from models import RiskRequest, RiskResponse, Base
 from risk_calculator import get_portfolio_returns, compute_var_stddev
 from fastapi.middleware.cors import CORSMiddleware
 from routes import router as portfolio_router
+from pydantic import BaseModel
+import pandas as pd
 
 # create an instance of FastAPI
 app = FastAPI()
@@ -26,6 +28,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+from fastapi.responses import JSONResponse
 # define computations for when API endpoint /api/risk receives a POST request
 @app.post("/api/risk", response_model=RiskResponse)
 def calculate_risk(request: RiskRequest):
@@ -39,5 +42,5 @@ def calculate_risk(request: RiskRequest):
     var_95=var_95,
     stddev=stddev,
     returns=portfolio_returns.tolist()
-)
+    )
 
