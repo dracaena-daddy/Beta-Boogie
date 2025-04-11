@@ -27,8 +27,6 @@ def verify_clerk_token(request: Request):
 
     public_key = get_clerk_public_key()
 
-    print("🧪 Raw auth header:", auth_header)
-
     try:
         decoded = jwt.decode(token, public_key, algorithms=["RS256"], options={"verify_aud": False})
         return decoded["sub"]  # Clerk user ID
