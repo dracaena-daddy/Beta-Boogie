@@ -41,7 +41,6 @@ export default function AnalyzePage() {
   const [loading, setLoading] = useState(false);
   const [invalidTickers, setInvalidTickers] = useState<string[]>([]);
 
-  // NEW CODE!
   useEffect(() => {
     if ("Notification" in window && Notification.permission !== "granted") {
       Notification.requestPermission();
@@ -74,8 +73,9 @@ export default function AnalyzePage() {
     setPortfolio(updated);
   };
 
-  // NEW CODE!
   const handleClearForm = () => {
+    const confirmed = window.confirm("Are you sure you want to clear the entire form?");
+    if (!confirmed) return;
     setPortfolio([{ ticker: "", weight: 0 }]);
     setPortfolioName("My Portfolio");
     setAnalysisName("My Analysis");
@@ -119,7 +119,6 @@ export default function AnalyzePage() {
           setInvalidTickers([]);
         }
 
-        // NEW
         toast.success("✅ Risk analysis complete!");
         if ("Notification" in window && Notification.permission === "granted") {
           new Notification("✅ Analysis Complete", {
@@ -180,6 +179,7 @@ export default function AnalyzePage() {
         <p className="text-center text-[#45AFFF] text-xl font-semibold">
           Grooving with your portfolio’s risk
         </p>
+d
         <section className="bg-[#2A2A50] p-4 rounded-xl shadow-sm">
           <h2 className="text-lg font-bold mb-2">Welcome to the Portfolio Analyzer</h2>
           <p className="text-sm text-gray-300">
