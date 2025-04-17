@@ -1,7 +1,7 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException, Body
 from db import engine
 from models import RiskRequest, RiskResponse, Base
-from risk_calculator import get_portfolio_returns, compute_var_stddev
+from risk_calculator import get_portfolio_returns, compute_var_stddev, compute_risk_metrics
 from fastapi.middleware.cors import CORSMiddleware
 from routes import router as portfolio_router
 
@@ -26,17 +26,36 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-@app.post("/api/risk")
-def calculate_risk(request: RiskRequest):
-    portfolio_returns, invalid_tickers = get_portfolio_returns(
-        request.portfolio,
-        request.start_date,
-        request.end_date
-    )
-    var_95, stddev = compute_var_stddev(portfolio_returns)
-    return {
-        "var_95": var_95,
-        "stddev": stddev,
-        "returns": portfolio_returns.tolist(),
-        "invalid_tickers": invalid_tickers
-    }
+@app.post("/api/risk", response_model=RiskResponse)
+# def calculate_risk(request: RiskRequest):
+    # portfolio_returns, invalid_tickers = get_portfolio_returns(
+    #     request.portfolio,
+    #     request.start_date,
+    #     request.end_date
+    # )
+    # var_95, stddev = compute_var_stddev(portfolio_returns)
+    # return {
+    #     "var_95": var_95,
+    #     "stddev": stddev,
+    #     "returns": portfolio_returns.tolist(),
+    #     "invalid_tickers": invalid_tickers
+    # }
+async def calculate_risk(data: RiskRequest = Body(...)):
+    try:
+        portfolio_returns, invalid_ticker = get_portfolio_returns(
+            data.portfolio, 
+            data.start_date,
+            data.end_date
+        )
+
+        results = [compute_risk_metrics(portfolio_returns, method)
+                   for method in data.methods]
+
+        return {
+            "results": results,
+            "returns": portfolio_returns.tolist(),
+            "invalid_tickers": invalid_ticker
+        }
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import List
+from typing import List, Optional
 from datetime import date
 from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, JSON
 from sqlalchemy.dialects.postgresql import ARRAY
@@ -19,13 +19,25 @@ class RiskRequest(BaseModel):
     portfolio: List[TickerWeight]
     start_date: date
     end_date: date
-    analysis_type: List[str]
+    #analysis_type: List[str]
+    methods: List[str]  # ✅ New field from frontend
+
+class MethodResult(BaseModel):
+    method: str
+    stddev: Optional[float] = None
+    var_95: Optional[float] = None
+    message: Optional[str] = None
 
 class RiskResponse(BaseModel):
     """Return 95% VaR and standard deviation"""
-    var_95: float
-    stddev: float
-    returns: List[float]
+    # var_95: float
+    # stddev: float
+    # returns: List[float]
+    results: List[MethodResult]
+    returns: Optional[List[float]] = None
+    invalid_tickers: Optional[List[str]] = None
+
+
 
 # models.py
 from sqlalchemy import Column, Integer, String, Float, DateTime

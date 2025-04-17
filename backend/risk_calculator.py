@@ -85,3 +85,45 @@ def get_portfolio_returns(portfolio, start_date=None, end_date=None):
 
     print("\n📊 Weighted portfolio returns computed.")
     return portfolio_returns, invalid_tickers
+
+def compute_risk_metrics(portfolio_returns, method: str):
+    method = method.lower()
+    try:
+        if method == "historical":
+            stddev = float(np.std(portfolio_returns))
+            var_95 = float(np.percentile(portfolio_returns, 5))
+            return {"method": method, "stddev": stddev, "var_95": var_95}
+
+        elif method == "ewma":
+            lambda_ = 0.94
+            squared_returns = portfolio_returns**2
+            ewma_variance = squared_returns.ewm(alpha=1 - lambda_).mean()
+            stddev = float(np.sqrt(ewma_variance.iloc[-1]))
+            var_95 = float(np.percentile(portfolio_returns, 5))
+            return {"method": method, "stddev": stddev, "var_95": var_95}
+
+        elif method == "garch":
+            from arch import arch_model
+            model = arch_model(portfolio_returns * 100, vol='Garch', p=1, q=1)
+            fitted = model.fit(disp="off")
+            forecast = fitted.forecast(horizon=1)
+            stddev = float(np.sqrt(forecast.variance.values[-1, 0]) / 100)
+            var_95 = float(np.percentile(portfolio_returns, 5))
+            return {"method": method, "stddev": stddev, "var_95": var_95}
+
+        elif method == "lstm":
+            return {"method": method, "message": "LSTM model not implemented yet."}
+
+        elif method == "cnn":
+            return {"method": method, "message": "CNN model not implemented yet."}
+
+        elif method == "text_embeddings":
+            return {"method": method, "message": "Text embedding-based volatility not implemented yet."}
+
+        elif method == "llm_narrative":
+            return {"method": method, "message": "LLM-generated volatility narrative not implemented yet."}
+
+        else:
+            return {"method": method, "message": "Unknown method."}
+    except Exception as e:
+        return {"method": method, "message": f"Error: {str(e)}"}
