@@ -110,7 +110,15 @@ def compute_risk_metrics(portfolio_returns, method: str):
             print(f"Latest Vol: {latest_vol}, VaR95: {var_95}, CVaR95: {cvar_95}")
             print(f"Sharpe Ratio: {sharpe_ratio}, Sortino Ratio: {sortino_ratio}")
             print(f"Max drawdown: {max_drawdown}")
-            return {"method": method, "stddev": stddev, "var_95": var_95}
+            return {
+                "method": method, 
+                "stddev": stddev,
+                "var_95": var_95,
+                "cvar_95": cvar_95,
+                "sharpe_ratio": sharpe_ratio,
+                "sortino_ratio": sortino_ratio,
+                "max_drawdown": max_drawdown
+            }
 
         elif method == "ewma":
             lambda_ = 0.94

@@ -26,6 +26,10 @@ class MethodResult(BaseModel):
     method: str
     stddev: Optional[float] = None
     var_95: Optional[float] = None
+    cvar_95: Optional[float] = None
+    sharpe_ratio: Optional[float] = None
+    sortino_ratio: Optional[float] = None
+    max_drawdown: Optional[float] = None
     message: Optional[str] = None
 
 class RiskResponse(BaseModel):
