@@ -75,10 +75,16 @@ class Analysis(Base):
     weights = Column(ARRAY(Float))
     start_date = Column(String)
     end_date = Column(String)
-    returns = Column(ARRAY(Float))
 
     # Analysis results
-    var = Column(Float)
-    stdev = Column(Float)
+    method = Column(String, nullable=False)
+    stddev = Column(Float, nullable=True)
+    var_95 = Column(Float, nullable=True)
+    cvar_95 = Column(Float, nullable=True)
+    sharpe_ratio = Column(Float, nullable=True)
+    sortino_ratio = Column(Float, nullable=True)
+    max_drawdown = Column(Float, nullable=True)
+    returns = Column(ARRAY(Float))
+
 
     created_at = Column(DateTime, default=datetime.utcnow)

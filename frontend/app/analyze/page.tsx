@@ -156,14 +156,25 @@ export default function AnalyzePage() {
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
+          // name: analysisName,
+          // tickers: portfolio.map((p) => p.ticker),
+          // weights: portfolio.map((p) => p.weight),
+          // startDate,
+          // endDate,
+          // returns: result.returns || [],
           name: analysisName,
           tickers: portfolio.map((p) => p.ticker),
           weights: portfolio.map((p) => p.weight),
           startDate,
           endDate,
-          var: result.results[0]?.var_95 ?? 0,
-          stdev: result.results[0]?.stddev ?? 0,
-          returns: result.returns || [],
+          method: result.method ?? "historical", // or however you determine method
+          stddev: result.stddev ?? null,
+          var_95: result.var_95 ?? null,
+          cvar_95: result.cvar_95 ?? null,
+          sharpe_ratio: result.sharpe_ratio ?? null,
+          sortino_ratio: result.sortino_ratio ?? null,
+          max_drawdown: result.max_drawdown ?? null,
+          returns: result.returns ?? [],
         }),
       });
 

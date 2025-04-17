@@ -3,7 +3,7 @@
 from fastapi import APIRouter, HTTPException, Depends, Request, Response
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
-from typing import List
+from typing import List, Optional
 from db import get_db
 from models import Portfolio, Analysis
 from datetime import datetime
@@ -105,8 +105,13 @@ class AnalysisIn(BaseModel):
     weights: List[float]
     startDate: str
     endDate: str
-    var: float
-    stdev: float
+    method: str
+    stddev: Optional[float]
+    var_95: Optional[float]
+    cvar_95: Optional[float]
+    sharpe_ratio: Optional[float]
+    sortino_ratio: Optional[float]
+    max_drawdown: Optional[float]
     returns: List[float]
 
 @router.post("/api/save-analysis")
@@ -120,11 +125,17 @@ def save_analysis(data: AnalysisIn, request: Request, db: Session = Depends(get_
         weights=data.weights,
         start_date=data.startDate,
         end_date=data.endDate,
-        var=data.var,
-        stdev=data.stdev,
+        method = data.method,
+        stddev = data.stddev,
+        var_95 = data.var_95,
+        cvar_95 = data.cvar_95,
+        sharpe_ratio = data.sharpe_ratio,
+        sortino_ratio = data.sortino_ratio,
+        max_drawdown = data.max_drawdown,
         returns=data.returns,  # new part
         created_at=datetime.utcnow(),
     )
+    print(data.dict())
 
     db.add(new_analysis)
     db.commit()
@@ -141,14 +152,28 @@ def load_analyses(request: Request, db: Session = Depends(get_db)):
 
     return [
         {
+            # "id": a.id,
+            # "name": a.name,
+            # "tickers": a.tickers,
+            # "weights": a.weights,
+            # "start_date": a.start_date,
+            # "end_date": a.end_date,
+            # "var": a.var,
+            # "stdev": a.stdev,
+            # "created_at": a.created_at.isoformat(),
             "id": a.id,
             "name": a.name,
             "tickers": a.tickers,
             "weights": a.weights,
             "start_date": a.start_date,
             "end_date": a.end_date,
-            "var": a.var,
-            "stdev": a.stdev,
+            "method": a.method,
+            "stddev": a.stddev,
+            "var_95": a.var_95,
+            "cvar_95": a.cvar_95,
+            "sharpe_ratio": a.sharpe_ratio,
+            "sortino_ratio": a.sortino_ratio,
+            "max_drawdown": a.max_drawdown,
             "created_at": a.created_at.isoformat(),
         }
         for a in analyses

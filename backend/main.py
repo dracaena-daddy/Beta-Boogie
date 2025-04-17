@@ -27,19 +27,6 @@ app.add_middleware(
 )
 
 @app.post("/api/risk", response_model=RiskResponse)
-# def calculate_risk(request: RiskRequest):
-    # portfolio_returns, invalid_tickers = get_portfolio_returns(
-    #     request.portfolio,
-    #     request.start_date,
-    #     request.end_date
-    # )
-    # var_95, stddev = compute_var_stddev(portfolio_returns)
-    # return {
-    #     "var_95": var_95,
-    #     "stddev": stddev,
-    #     "returns": portfolio_returns.tolist(),
-    #     "invalid_tickers": invalid_tickers
-    # }
 async def calculate_risk(data: RiskRequest = Body(...)):
     try:
         # download data and build portfolio
