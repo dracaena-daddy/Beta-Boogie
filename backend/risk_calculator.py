@@ -11,7 +11,10 @@ def compute_var_stddev(portfolio_returns):
     return var_95, stddev
 
 def get_portfolio_returns(portfolio, start_date=None, end_date=None):
-    """Fetch weighted portfolio returns for a given set of tickers and weights"""
+    """Fetch weighted portfolio returns for a given set of tickers and weights
+    Returns a tuple where the first element is a dataframe containing the returns 
+    for a given set of tickers over a given period and the second element is a 
+    list containing the invalid ticker symbols"""
 
     if end_date is None:
         end_date = datetime.today().date()
@@ -87,11 +90,26 @@ def get_portfolio_returns(portfolio, start_date=None, end_date=None):
     return portfolio_returns, invalid_tickers
 
 def compute_risk_metrics(portfolio_returns, method: str):
+    """Compute various financial risk metrics. 
+    portfolio_returns is a series of weighted daily returns"""
     method = method.lower()
     try:
         if method == "historical":
-            stddev = float(np.std(portfolio_returns))
-            var_95 = float(np.percentile(portfolio_returns, 5))
+            historical_volatility = compute_historical_volatility(portfolio_returns)  # use default values for now
+            latest_vol = historical_volatility.dropna().iloc[-1]  # get the latest volatility
+            stddev = float(np.std(historical_volatility))
+
+            # compute metrics
+            var_95 = compute_VaR(latest_vol)
+            cvar_95 = compute_CVaR(latest_vol)
+            sharpe_ratio = compute_sharpe_ratio(portfolio_returns, latest_vol)
+            sortino_ratio = compute_sortino(portfolio_returns)
+            max_drawdown = compute_max_drawdown(portfolio_returns)
+
+            # print results
+            print(f"Latest Vol: {latest_vol}, VaR95: {var_95}, CVaR95: {cvar_95}")
+            print(f"Sharpe Ratio: {sharpe_ratio}, Sortino Ratio: {sortino_ratio}")
+            print(f"Max drawdown: {max_drawdown}")
             return {"method": method, "stddev": stddev, "var_95": var_95}
 
         elif method == "ewma":
@@ -127,3 +145,62 @@ def compute_risk_metrics(portfolio_returns, method: str):
             return {"method": method, "message": "Unknown method."}
     except Exception as e:
         return {"method": method, "message": f"Error: {str(e)}"}
+
+
+def compute_historical_volatility(portfolio_returns: pd.Series, lookback: int = 30, annualize: bool = False) -> pd.Series:
+    """
+    Compute historical (rolling) volatility for a given portfolio returns series.
+    
+    Parameters:
+    - portfolio_returns: pd.Series of daily log or percentage returns.
+    - lookback: rolling window size (in days).
+    - annualize: whether to scale by sqrt(252) for annual volatility.
+    
+    Returns:
+    - pd.Series of rolling volatility values.
+    """
+    rolling_std = portfolio_returns.rolling(window=lookback).std()
+
+    # return the time series of volatility values, but we'll only use the most
+    # recent one to compute VaR
+    if annualize:
+        return rolling_std * np.sqrt(252)
+    return rolling_std 
+
+def compute_VaR(latest_vol):
+    """Compute the 95% VaR"""
+    z_95 = 1.65
+    var_95 = -z_95 * latest_vol   # 95% VaR
+    return var_95
+
+def compute_CVaR(latest_vol):
+    """Compute the 95% CVaR"""
+    cvar_multiplier_95 = 2.06  # precomputed from normal distribution
+    cvar_95 = -cvar_multiplier_95 * latest_vol   # 95% CVaR
+    return cvar_95
+
+def compute_sharpe_ratio(weighted_returns, latest_vol):
+    """Compute the sharpe ratio (daily)"""
+    # compute sharpe ratio (already annualized)
+    mean_daily_return = weighted_returns.mean()
+    risk_free_rate_daily = 0.02 / 252
+    sharpe_ratio = (mean_daily_return - risk_free_rate_daily) / latest_vol
+    return sharpe_ratio
+
+def compute_sortino(weighted_returns):
+    """Compute Sortino Ratio (annualized)"""
+    risk_free_rate_daily = 0.02 / 252
+    downside_returns = weighted_returns[weighted_returns < risk_free_rate_daily]
+    downside_std = downside_returns.std()
+    mean_daily_return = weighted_returns.mean()
+    sortino_ratio = (mean_daily_return - risk_free_rate_daily) / downside_std if downside_std != 0 else np.nan
+    sortino_annualized = sortino_ratio * np.sqrt(252)
+    return sortino_annualized
+
+def compute_max_drawdown(weighted_returns):
+    """Compute the Maximum Drawdown"""
+    cumulative = (1 + weighted_returns).cumprod()
+    peak = cumulative.cummax()
+    drawdown = (cumulative - peak) / peak
+    max_drawdown = float(drawdown.min())
+    return max_drawdown

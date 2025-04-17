@@ -5,6 +5,7 @@ import { useUser, useAuth } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import toast, { Toaster } from 'react-hot-toast';
+import ScrollToTop from '../components/ScrollToTop';
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -272,6 +273,7 @@ export default function DashboardPage() {
           </div>
         )}
       </section>
+      <ScrollToTop/>
     </main>
   );
 }

@@ -42,12 +42,14 @@ app.add_middleware(
     # }
 async def calculate_risk(data: RiskRequest = Body(...)):
     try:
+        # download data and build portfolio
         portfolio_returns, invalid_ticker = get_portfolio_returns(
             data.portfolio, 
             data.start_date,
             data.end_date
         )
 
+        # compute risk metrics (portfolio returns is a dataframe...?)
         results = [compute_risk_metrics(portfolio_returns, method)
                    for method in data.methods]
 
