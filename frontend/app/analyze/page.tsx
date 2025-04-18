@@ -14,9 +14,7 @@ import TickerWarning from "../components/TickerWarning";
 import VolatilityMethodSelector from "../components/VolatilityMethodSelector";
 import ScrollToTop from "../components/ScrollToTop";
 
-const popularTickers = [
-  "AAPL", "MSFT", "AMZN", "NVDA", "GOOGL", "TSLA", "META", "BRK.B", "UNH", "JNJ",
-];
+const popularTickers = ["AAPL", "MSFT", "AMZN", "NVDA", "GOOGL"];
 
 type TickerInput = {
   ticker: string;
@@ -28,6 +26,10 @@ type RiskResult = {
     method: string;
     stddev?: number;
     var_95?: number;
+    cvar_95?: number;
+    sharpe_ratio?: number;
+    sortino_ratio?: number;
+    max_drawdown?: number;
     message?: string;
   }[];
   returns: number[];
@@ -73,7 +75,6 @@ export default function AnalyzePage() {
   };
 
   const addRow = () => setPortfolio([...portfolio, { ticker: "", weight: 0 }]);
-
   const removeRow = (index: number) => {
     const updated = [...portfolio];
     updated.splice(index, 1);
@@ -81,7 +82,7 @@ export default function AnalyzePage() {
   };
 
   const handleClearForm = () => {
-    const confirmed = window.confirm("Are you sure you want to clear the entire form?");
+    const confirmed = window.confirm("Clear the entire form?");
     if (!confirmed) return;
     setPortfolio([{ ticker: "", weight: 0 }]);
     setPortfolioName("My Portfolio");
@@ -90,7 +91,7 @@ export default function AnalyzePage() {
     setEndDate("2024-01-01");
     setResult(null);
     setInvalidTickers([]);
-    toast.success("Form cleared. Ready to start fresh!");
+    toast.success("Form cleared.");
   };
 
   const handleSubmit = async () => {
@@ -98,7 +99,7 @@ export default function AnalyzePage() {
 
     const hasInvalid = portfolio.some((p) => !p.ticker || isNaN(p.weight));
     if (hasInvalid) {
-      toast.error("Please make sure all tickers and weights are filled in.");
+      toast.error("Please fill in all tickers and weights.");
       return;
     }
 
@@ -124,27 +125,27 @@ export default function AnalyzePage() {
           toast.error(`Invalid tickers: ${data.invalid_tickers.join(", ")}`);
         } else {
           setInvalidTickers([]);
-        }
-
-        toast.success("✅ Risk analysis complete!");
-        if ("Notification" in window && Notification.permission === "granted") {
-          new Notification("✅ Analysis Complete", {
-            body: "Your portfolio risk analysis has finished!",
-          });
+          toast.success("✅ Risk analysis complete!");
+          if ("Notification" in window && Notification.permission === "granted") {
+            new Notification("✅ Analysis Complete", {
+              body: "Your portfolio risk analysis has finished!",
+            });
+          }
         }
       } else {
-        toast.error("Error from backend");
+        toast.error("Backend error during analysis.");
       }
     } catch (err) {
       console.error(err);
-      toast.error("Network or server error");
+      toast.error("Network/server error.");
     } finally {
       setLoading(false);
     }
   };
 
   const handleSaveAnalysis = async () => {
-    if (!result) return;
+    if (!result || !result.results?.[0]) return;
+    const r = result.results[0];
 
     try {
       const token = await getToken();
@@ -156,24 +157,18 @@ export default function AnalyzePage() {
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          // name: analysisName,
-          // tickers: portfolio.map((p) => p.ticker),
-          // weights: portfolio.map((p) => p.weight),
-          // startDate,
-          // endDate,
-          // returns: result.returns || [],
           name: analysisName,
           tickers: portfolio.map((p) => p.ticker),
           weights: portfolio.map((p) => p.weight),
           startDate,
           endDate,
-          method: result.method ?? "historical", // or however you determine method
-          stddev: result.stddev ?? null,
-          var_95: result.var_95 ?? null,
-          cvar_95: result.cvar_95 ?? null,
-          sharpe_ratio: result.sharpe_ratio ?? null,
-          sortino_ratio: result.sortino_ratio ?? null,
-          max_drawdown: result.max_drawdown ?? null,
+          method: r.method,
+          stddev: r.stddev ?? null,
+          var_95: r.var_95 ?? null,
+          cvar_95: r.cvar_95 ?? null,
+          sharpe_ratio: r.sharpe_ratio ?? null,
+          sortino_ratio: r.sortino_ratio ?? null,
+          max_drawdown: r.max_drawdown ?? null,
           returns: result.returns ?? [],
         }),
       });
@@ -198,11 +193,10 @@ export default function AnalyzePage() {
           Grooving with your portfolio’s risk
         </p>
 
-        {/* Portfolio Builder */}
         <section className="bg-[#2A2A50] p-4 rounded-xl shadow-sm">
           <h2 className="text-lg font-bold mb-2">Welcome to the Portfolio Analyzer</h2>
           <p className="text-sm text-gray-300">
-            Use this page to build, save, and analyze the risk of your investment portfolio.
+            Build, save, and analyze the risk of your investment portfolio.
           </p>
         </section>
 
@@ -234,7 +228,6 @@ export default function AnalyzePage() {
           <UploadPortfolioCSV onLoad={(data) => setPortfolio(data)} />
         </section>
 
-        {/* Date Range Picker */}
         <section className="border-t border-[#333366] pt-6">
           <h3 className="text-lg font-semibold mb-2 text-[#9D4EDD]">📅 Select Date Range</h3>
           <DateRangePicker
@@ -245,45 +238,34 @@ export default function AnalyzePage() {
           />
         </section>
 
-        {/* 💾 Save Portfolio */}
         <section className="border-t border-[#333366] pt-6">
           <h3 className="text-lg font-semibold mb-2 text-[#9D4EDD]">💾 Save Portfolio</h3>
-          <div className="space-y-2">
-            <input
-              type="text"
-              value={portfolioName}
-              onChange={(e) => setPortfolioName(e.target.value)}
-              placeholder="Enter portfolio name"
-              className="w-full p-2 rounded border border-gray-300 bg-[#1A1A40] text-white"
-            />
-            <SaveButton
-              portfolio={{
-                name: portfolioName,
-                tickers: portfolio.map((p) => p.ticker),
-                weights: portfolio.map((p) => p.weight),
-                startDate,
-                endDate,
-              }}
-            />
-            <p className="text-sm text-gray-400">
-              Save this portfolio setup to reuse later
-            </p>
-          </div>
+          <input
+            type="text"
+            value={portfolioName}
+            onChange={(e) => setPortfolioName(e.target.value)}
+            placeholder="Enter portfolio name"
+            className="w-full p-2 rounded border border-gray-300 bg-[#1A1A40] text-white"
+          />
+          <SaveButton
+            portfolio={{
+              name: portfolioName,
+              tickers: portfolio.map((p) => p.ticker),
+              weights: portfolio.map((p) => p.weight),
+              startDate,
+              endDate,
+            }}
+          />
         </section>
 
-        {/* Volatility Method Selector */}
         <section className="border-t border-[#333366] pt-6">
           <h3 className="text-lg font-semibold mb-2 text-[#9D4EDD]">📌 Select Volatility Methods</h3>
           <VolatilityMethodSelector
             selected={selectedMethods}
             onChange={setSelectedMethods}
           />
-          <p className="text-sm text-gray-400 mt-2">
-            Choose one or more volatility models to apply to this analysis.
-          </p>
         </section>
 
-        {/* Risk Analysis */}
         <section className="border-t border-[#333366] pt-6">
           <h3 className="text-lg font-semibold mb-2 text-[#9D4EDD]">📈 Risk Analysis</h3>
           <button
@@ -297,10 +279,12 @@ export default function AnalyzePage() {
           >
             {loading ? "Crunching the numbers..." : "Calculate Risk"}
           </button>
+
           <TickerWarning
             invalidTickers={invalidTickers}
             onClose={() => setInvalidTickers([])}
           />
+
           {result && (
             <div className="mt-6 space-y-4">
               <ResultCard result={result} />
@@ -321,7 +305,7 @@ export default function AnalyzePage() {
           )}
         </section>
       </div>
-      <ScrollToTop/>
+      <ScrollToTop />
     </main>
   );
 }
