@@ -4,8 +4,8 @@ from datetime import date
 from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, JSON
 from sqlalchemy.dialects.postgresql import ARRAY
 from datetime import datetime
-from sqlalchemy.orm import declarative_base
-from sqlalchemy import Float
+from sqlalchemy.orm import declarative_base, relationship
+from sqlalchemy import Float 
 
 
 
@@ -68,15 +68,11 @@ class Analysis(Base):
 
     id = Column(Integer, primary_key=True)
     user_id = Column(String, index=True)
-
-    # Portfolio details
     name = Column(String)
     tickers = Column(ARRAY(String))
     weights = Column(ARRAY(Float))
     start_date = Column(String)
     end_date = Column(String)
-
-    # Analysis results
     method = Column(String, nullable=False)
     stddev = Column(Float, nullable=True)
     var_95 = Column(Float, nullable=True)
@@ -85,6 +81,4 @@ class Analysis(Base):
     sortino_ratio = Column(Float, nullable=True)
     max_drawdown = Column(Float, nullable=True)
     returns = Column(ARRAY(Float))
-
-
     created_at = Column(DateTime, default=datetime.utcnow)

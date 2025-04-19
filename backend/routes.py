@@ -135,7 +135,6 @@ def save_analysis(data: AnalysisIn, request: Request, db: Session = Depends(get_
         returns=data.returns,  # new part
         created_at=datetime.utcnow(),
     )
-    print(data.dict())
 
     db.add(new_analysis)
     db.commit()

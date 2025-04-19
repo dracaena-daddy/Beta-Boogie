@@ -21,6 +21,7 @@ type TickerInput = {
   weight: number;
 };
 
+// TODO: May need to update this with the methods
 type RiskResult = {
   results: {
     method: string;
@@ -170,6 +171,7 @@ export default function AnalyzePage() {
           sortino_ratio: r.sortino_ratio ?? null,
           max_drawdown: r.max_drawdown ?? null,
           returns: result.returns ?? [],
+          // methods: result.results
         }),
       });
 
