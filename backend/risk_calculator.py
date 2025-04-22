@@ -118,12 +118,21 @@ def compute_risk_metrics(weighted_portfolio_returns, method: str):
             }
 
         elif method == "ewma":
-            lambda_ = 0.94
-            squared_returns = weighted_portfolio_returns**2
-            ewma_variance = squared_returns.ewm(alpha=1 - lambda_).mean()
-            stddev = float(np.sqrt(ewma_variance.iloc[-1]))
-            var_95 = float(np.percentile(weighted_portfolio_returns, 5))
-            return {"method": method, "stddev": stddev, "var_95": var_95}
+            ewma_volatility = compute_ewma_volatility(weighted_portfolio_returns)
+            ewma_var_95 = compute_VaR(ewma_volatility)
+            ewma_cvar_95 = compute_CVaR(ewma_volatility)
+            ewma_sharpe_ratio = compute_sharpe_ratio(weighted_portfolio_returns, ewma_volatility)
+            ewma_sortino_ratio = compute_sortino(weighted_portfolio_returns)
+            ewma_max_drawdown = compute_max_drawdown(weighted_portfolio_returns)
+            return {
+                "method": method, 
+                "stddev": ewma_volatility,
+                "var_95": ewma_var_95,
+                "cvar_95": ewma_cvar_95,
+                "sharpe_ratio": ewma_sharpe_ratio,
+                "sortino_ratio": ewma_sortino_ratio,
+                "max_drawdown": ewma_max_drawdown
+            }
 
         elif method == "garch":
             garch_volatility = compute_garch_volatility(weighted_portfolio_returns)
@@ -236,3 +245,20 @@ def compute_garch_volatility(returns: pd.Series) -> float:
     # Annualize volatility (252 trading days)
     annualized_vol = daily_vol * np.sqrt(252)
     return annualized_vol / 100  # Return in decimal form
+
+def compute_ewma_volatility(returns: pd.Series, lambda_: float = 0.94) -> float:
+    """
+    Computes annualized volatility using EWMA.
+    """
+    # Ensure returns are daily and in decimal form
+    returns = returns.dropna()
+    
+    weights = np.array([(1 - lambda_) * (lambda_ ** i) for i in range(len(returns) - 1, -1, -1)])
+    weights /= weights.sum()  # Normalize weights
+
+    weighted_mean = np.average(returns, weights=weights)
+    weighted_var = np.average((returns - weighted_mean) ** 2, weights=weights)
+
+    # Annualize
+    ewma_vol = np.sqrt(weighted_var) * np.sqrt(252)
+    return ewma_vol
