@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 from datetime import datetime, timedelta
 from requests.exceptions import HTTPError
+from arch import arch_model
 
 def compute_var_stddev(portfolio_returns):
     """Quickly compute some returns and var (not actually used in final implementation)"""
@@ -89,53 +90,57 @@ def get_portfolio_returns(portfolio, start_date=None, end_date=None):
     print("\n📊 Weighted portfolio returns computed.")
     return portfolio_returns, invalid_tickers
 
-def compute_risk_metrics(portfolio_returns, method: str):
+def compute_risk_metrics(weighted_portfolio_returns, method: str):
     """Compute various financial risk metrics. 
     portfolio_returns is a series of weighted daily returns"""
     method = method.lower()
     try:
         if method == "historical":
-            historical_volatility = compute_historical_volatility(portfolio_returns)  # use default values for now
+            historical_volatility = compute_historical_volatility(weighted_portfolio_returns)  # use default values for now
             latest_vol = historical_volatility.dropna().iloc[-1]  # get the latest volatility
             stddev = float(np.std(historical_volatility))
 
             # compute metrics
-            var_95 = compute_VaR(latest_vol)
-            cvar_95 = compute_CVaR(latest_vol)
-            sharpe_ratio = compute_sharpe_ratio(portfolio_returns, latest_vol)
-            sortino_ratio = compute_sortino(portfolio_returns)
-            max_drawdown = compute_max_drawdown(portfolio_returns)
+            historical_var_95 = compute_VaR(latest_vol)
+            historical_cvar_95 = compute_CVaR(latest_vol)
+            historical_sharpe_ratio = compute_sharpe_ratio(weighted_portfolio_returns, latest_vol)
+            historical_sortino_ratio = compute_sortino(weighted_portfolio_returns)
+            historical_max_drawdown = compute_max_drawdown(weighted_portfolio_returns)
 
-            # print results
-            print(f"Latest Vol: {latest_vol}, VaR95: {var_95}, CVaR95: {cvar_95}")
-            print(f"Sharpe Ratio: {sharpe_ratio}, Sortino Ratio: {sortino_ratio}")
-            print(f"Max drawdown: {max_drawdown}")
             return {
                 "method": method, 
                 "stddev": stddev,
-                "var_95": var_95,
-                "cvar_95": cvar_95,
-                "sharpe_ratio": sharpe_ratio,
-                "sortino_ratio": sortino_ratio,
-                "max_drawdown": max_drawdown
+                "var_95": historical_var_95,
+                "cvar_95": historical_cvar_95,
+                "sharpe_ratio": historical_sharpe_ratio,
+                "sortino_ratio": historical_sortino_ratio,
+                "max_drawdown": historical_max_drawdown
             }
 
         elif method == "ewma":
             lambda_ = 0.94
-            squared_returns = portfolio_returns**2
+            squared_returns = weighted_portfolio_returns**2
             ewma_variance = squared_returns.ewm(alpha=1 - lambda_).mean()
             stddev = float(np.sqrt(ewma_variance.iloc[-1]))
-            var_95 = float(np.percentile(portfolio_returns, 5))
+            var_95 = float(np.percentile(weighted_portfolio_returns, 5))
             return {"method": method, "stddev": stddev, "var_95": var_95}
 
         elif method == "garch":
-            from arch import arch_model
-            model = arch_model(portfolio_returns * 100, vol='Garch', p=1, q=1)
-            fitted = model.fit(disp="off")
-            forecast = fitted.forecast(horizon=1)
-            stddev = float(np.sqrt(forecast.variance.values[-1, 0]) / 100)
-            var_95 = float(np.percentile(portfolio_returns, 5))
-            return {"method": method, "stddev": stddev, "var_95": var_95}
+            garch_volatility = compute_garch_volatility(weighted_portfolio_returns)
+            garch_var_95 = compute_VaR(garch_volatility) 
+            garch_cvar_95 = compute_CVaR(garch_volatility)
+            garch_sharpe_ratio = compute_sharpe_ratio(weighted_portfolio_returns, garch_volatility)
+            garch_sortino_ratio = compute_sortino(weighted_portfolio_returns)
+            garch_max_drawdown = compute_max_drawdown(weighted_portfolio_returns)
+            return {
+                "method": method, 
+                "stddev": garch_volatility,
+                "var_95": garch_var_95,
+                "cvar_95": garch_cvar_95,
+                "sharpe_ratio": garch_sharpe_ratio,
+                "sortino_ratio": garch_sortino_ratio,
+                "max_drawdown": garch_max_drawdown
+            }
 
         elif method == "lstm":
             return {"method": method, "message": "LSTM model not implemented yet."}
@@ -175,24 +180,24 @@ def compute_historical_volatility(portfolio_returns: pd.Series, lookback: int = 
         return rolling_std * np.sqrt(252)
     return rolling_std 
 
-def compute_VaR(latest_vol):
+def compute_VaR(volatility):
     """Compute the 95% VaR"""
     z_95 = 1.65
-    var_95 = -z_95 * latest_vol   # 95% VaR
+    var_95 = -z_95 * volatility   # 95% VaR
     return var_95
 
-def compute_CVaR(latest_vol):
+def compute_CVaR(volatility):
     """Compute the 95% CVaR"""
     cvar_multiplier_95 = 2.06  # precomputed from normal distribution
-    cvar_95 = -cvar_multiplier_95 * latest_vol   # 95% CVaR
+    cvar_95 = -cvar_multiplier_95 * volatility   # 95% CVaR
     return cvar_95
 
-def compute_sharpe_ratio(weighted_returns, latest_vol):
+def compute_sharpe_ratio(weighted_returns, volatility):
     """Compute the sharpe ratio (daily)"""
     # compute sharpe ratio (already annualized)
     mean_daily_return = weighted_returns.mean()
     risk_free_rate_daily = 0.02 / 252
-    sharpe_ratio = (mean_daily_return - risk_free_rate_daily) / latest_vol
+    sharpe_ratio = (mean_daily_return - risk_free_rate_daily) / volatility
     return sharpe_ratio
 
 def compute_sortino(weighted_returns):
@@ -212,3 +217,22 @@ def compute_max_drawdown(weighted_returns):
     drawdown = (cumulative - peak) / peak
     max_drawdown = float(drawdown.min())
     return max_drawdown
+
+def compute_garch_volatility(returns: pd.Series) -> float:
+    """
+    Fit a GARCH(1,1) model and return annualized volatility.
+    """
+    # Scale to percentage returns if necessary
+    if returns.mean() < 1:
+        returns *= 100
+    
+    model = arch_model(returns, vol='Garch', p=1, q=1, rescale=False)
+    res = model.fit(disp="off")
+
+    # Get the conditional volatility forecast for the next day
+    forecast = res.forecast(horizon=1)
+    daily_vol = np.sqrt(forecast.variance.values[-1, 0])
+
+    # Annualize volatility (252 trading days)
+    annualized_vol = daily_vol * np.sqrt(252)
+    return annualized_vol / 100  # Return in decimal form
