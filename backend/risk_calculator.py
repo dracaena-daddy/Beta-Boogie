@@ -4,6 +4,7 @@ import pandas as pd
 from datetime import datetime, timedelta
 from requests.exceptions import HTTPError
 from arch import arch_model
+import requests 
 
 def compute_var_stddev(portfolio_returns):
     """Quickly compute some returns and var (not actually used in final implementation)"""
@@ -151,8 +152,13 @@ def compute_risk_metrics(weighted_portfolio_returns, method: str):
                 "max_drawdown": garch_max_drawdown
             }
 
+        # TODO: Complete the final metrics 
         elif method == "lstm":
-            return {"method": method, "message": "LSTM model not implemented yet."}
+            lstm_volatility = fetch_lstm_volatility(weighted_portfolio_returns[-20:].tolist())
+            return {
+                "method": method,
+                "stddev": lstm_volatility,
+            }
 
         elif method == "cnn":
             return {"method": method, "message": "CNN model not implemented yet."}
@@ -262,3 +268,15 @@ def compute_ewma_volatility(returns: pd.Series, lambda_: float = 0.94) -> float:
     # Annualize
     ewma_vol = np.sqrt(weighted_var) * np.sqrt(252)
     return ewma_vol
+
+def fetch_lstm_volatility(returns_20_day: list[float]) -> float:
+    try:
+        response = requests.post(
+            "http://localhost:8001/predict",
+            json={"returns": returns_20_day}
+        )
+        response.raise_for_status()
+        return response.json()["volatility"]
+    except Exception as e:
+        print(f"[ERROR] Failed to fetch LSTM volatility: {e}")
+        return None
