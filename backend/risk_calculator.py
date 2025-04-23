@@ -152,16 +152,39 @@ def compute_risk_metrics(weighted_portfolio_returns, method: str):
                 "max_drawdown": garch_max_drawdown
             }
 
-        # TODO: Complete the final metrics 
         elif method == "lstm":
             lstm_volatility = fetch_lstm_volatility(weighted_portfolio_returns[-20:].tolist())
+            lstm_var_95 = compute_VaR(lstm_volatility)
+            lstm_cvar_95 = compute_CVaR(lstm_volatility)
+            lstm_sharpe_ratio = compute_sharpe_ratio(weighted_portfolio_returns, lstm_volatility)
+            lstm_sortino_ratio = compute_sortino(weighted_portfolio_returns)
+            lstm_max_drawdown = compute_max_drawdown(weighted_portfolio_returns)
             return {
                 "method": method,
                 "stddev": lstm_volatility,
+                "var_95": lstm_var_95,
+                "cvar_95": lstm_cvar_95,
+                "sharpe_ratio": lstm_sharpe_ratio,
+                "sortino_ratio": lstm_sortino_ratio, 
+                "max_drawdown": lstm_max_drawdown
             }
 
         elif method == "cnn":
-            return {"method": method, "message": "CNN model not implemented yet."}
+            cnn_lstm_volatility = fetch_cnn_lstm_volatility(weighted_portfolio_returns[-20:].tolist())
+            cnn_lstm_var_95 = compute_VaR(cnn_lstm_volatility)
+            cnn_lstm_cvar_95 = compute_CVaR(cnn_lstm_volatility)
+            cnn_lstm_sharpe_ratio = compute_sharpe_ratio(weighted_portfolio_returns, cnn_lstm_volatility)
+            cnn_lstm_sortino_ratio = compute_sortino(weighted_portfolio_returns)
+            cnn_lstm_max_drawdown = compute_max_drawdown(weighted_portfolio_returns)
+            return {
+                "method": method,
+                "stddev": cnn_lstm_volatility,
+                "var_95": cnn_lstm_var_95,
+                "cvar_95": cnn_lstm_cvar_95,
+                "sharpe_ratio": cnn_lstm_sharpe_ratio,
+                "sortino_ratio": cnn_lstm_sortino_ratio, 
+                "max_drawdown": cnn_lstm_max_drawdown
+            }
 
         elif method == "text_embeddings":
             return {"method": method, "message": "Text embedding-based volatility not implemented yet."}
@@ -270,6 +293,7 @@ def compute_ewma_volatility(returns: pd.Series, lambda_: float = 0.94) -> float:
     return ewma_vol
 
 def fetch_lstm_volatility(returns_20_day: list[float]) -> float:
+    """Fetches the LSTM model using the weighted returns data as input"""
     try:
         response = requests.post(
             "http://localhost:8001/predict",
@@ -279,4 +303,16 @@ def fetch_lstm_volatility(returns_20_day: list[float]) -> float:
         return response.json()["volatility"]
     except Exception as e:
         print(f"[ERROR] Failed to fetch LSTM volatility: {e}")
+        return None
+
+def fetch_cnn_lstm_volatility(returns_20_day: list[float]) -> float:
+    try:
+        response = requests.post(
+            "http://localhost:8002/predict",
+            json={"returns": returns_20_day}
+        )
+        response.raise_for_status()
+        return response.json()["volatility"]
+    except Exception as e:
+        print(f"[ERROR] CNN-LSTM service failed: {e}")
         return None
