@@ -1,11 +1,10 @@
-# API routes live here
 # routes.py
 from fastapi import APIRouter, HTTPException, Depends, Request, Response
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from typing import List, Optional
 from db import get_db
-from models import Portfolio, Analysis
+from models import Portfolio, Analysis, InterpretationRequest
 from datetime import datetime
 from auth import verify_clerk_token
 from matplotlib import pyplot as plt
@@ -16,10 +15,19 @@ matplotlib.use("Agg")  #  Headless, non-GUI backend
 from matplotlib import pyplot as plt
 import base64
 from fastapi.responses import HTMLResponse
-
-
+import openai
+import os
+from dotenv import load_dotenv
 
 router = APIRouter()
+
+# Open AI API key
+load_dotenv()
+openai.api_key = os.getenv("OPEN_API_KEY")
+assert openai.api_key is not None, "OpenAI key not loaded!"
+client = openai.OpenAI(api_key=os.getenv("OPEN_API_KEY"))
+
+
 
 # PORTFOLIO ROUTES
 class PortfolioIn(BaseModel):
@@ -383,3 +391,56 @@ def export_analysis_html(analysis_id: int, request: Request, db: Session = Depen
     return HTMLResponse(content=html_content, status_code=200, headers={
         "Content-Disposition": f"attachment; filename=analysis_{analysis_id}.html"
     })
+
+@router.post("/api/interpret-analysis")
+# def interpret_analysis(data: InterpretationRequest):
+#     try:
+#         prompt = f"""
+#         Interpret the following risk analysis results for a financial portfolio.
+
+#         Portfolio Name: {data.name}
+#         Volatility Method Used: {data.method}
+#         Risk Metrics: {data.metrics}
+
+#         Provide a clear and concise summary in plain English. Make it understandable to a moderately informed investor. Keep it under 300 words. Highlight if the portfolio is high or low risk, how the VaR and CVaR should be interpreted, and whether the risk-adjusted return metrics (Sharpe/Sortino) are favorable.
+#         """
+
+#         response = openai.ChatCompletion.create(
+#             model="gpt-4",
+#             messages=[
+#                 {"role": "system", "content": "You are a helpful financial risk analyst."},
+#                 {"role": "user", "content": prompt}
+#             ],
+#             temperature=0.7
+#         )
+
+#         return {"interpretation": response.choices[0].message["content"]}
+
+#     except Exception as e:
+#         raise HTTPException(status_code=500, detail=f"LLM interpretation failed: {e}")
+@router.post("/api/interpret-analysis")
+def interpret_analysis(data: InterpretationRequest):
+    try:
+        prompt = f"""
+        Interpret the following risk analysis results for a financial portfolio.
+
+        Portfolio Name: {data.name}
+        Volatility Method Used: {data.method}
+        Risk Metrics: {data.metrics}
+
+        Provide a clear and concise summary in plain English. Make it understandable to a moderately informed investor. Keep it under 300 words. Highlight if the portfolio is high or low risk, how the VaR and CVaR should be interpreted, and whether the risk-adjusted return metrics (Sharpe/Sortino) are favorable.
+        """
+
+        response = client.chat.completions.create(
+            model="gpt-4",
+            messages=[
+                {"role": "system", "content": "You are a helpful financial risk analyst."},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.7
+        )
+
+        return {"interpretation": response.choices[0].message.content}
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"LLM interpretation failed: {e}")

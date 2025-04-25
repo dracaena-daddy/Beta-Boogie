@@ -82,3 +82,8 @@ class Analysis(Base):
     max_drawdown = Column(Float, nullable=True)
     returns = Column(ARRAY(Float))
     created_at = Column(DateTime, default=datetime.utcnow)
+
+class InterpretationRequest(BaseModel):
+    method: str
+    name: str
+    metrics: dict
